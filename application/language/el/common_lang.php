@@ -1,4 +1,5 @@
-<?php
+<?php 
+
 $lang["common_address_1"] = "Διεύθυνση 1";
 $lang["common_address_2"] = "Διεύθυνση 2";
 $lang["common_city"] = "Πόλη";
@@ -6,18 +7,19 @@ $lang["common_close"] = "Κλείσιμο";
 $lang["common_comments"] = "Σχόλια";
 $lang["common_common"] = "κοινά";
 $lang["common_confirm_search"] = "Έχετε διαλέξει μία ή περισσότερες σειρές, οι οποίες δε θα είναι επιλέξιμες μετά την αναζήτηση σας. Είστε σίγουροι ότι θέλετε να υποβάλετε την αναζήτηση?";
+$lang["common_copyrights"] = "© 2010 - %1";
 $lang["common_correct_errors"] = "Παρακαλώ διορθώστε τα αναγνωρισμένα σφάλματα πριν συνεχίσετε";
 $lang["common_country"] = "Χώρα";
 $lang["common_date"] = "Ημερομηνία";
 $lang["common_delete"] = "Διαγραφή";
 $lang["common_det"] = "λεπτομέρειες";
-$lang["common_download_import_template"] = "Λήψη Πρότυπου Εισαγωγής  Excel  (CSV)";
+$lang["common_download_import_template"] = "Λήψη Πρότυπου Εισαγωγής  CSV  (CSV)";
 $lang["common_edit"] = "επεξεργασία";
 $lang["common_email"] = "Email";
 $lang["common_email_invalid_format"] = "Η διεύθυνση ηλ.ταχυδρομείου εχει λανθασμενη μορφή.";
-$lang["common_export_excel"] = "Εξαγωγή Excel";
-$lang["common_export_excel_no"] = "Όχι";
-$lang["common_export_excel_yes"] = "Ναί";
+$lang["common_export_csv"] = "Εξαγωγή CSV";
+$lang["common_export_csv_no"] = "Όχι";
+$lang["common_export_csv_yes"] = "Ναί";
 $lang["common_fields_required_message"] = "Τα κόκκινα πεδία απαιτούνται";
 $lang["common_first_name"] = "Κύριο όνομα";
 $lang["common_first_name_required"] = "Το κύριο όνομα απαιτείται.";
@@ -28,8 +30,8 @@ $lang["common_gender_male"] = "Α";
 $lang["common_id"] = "Id";
 $lang["common_import"] = "Εισαγωγή";
 $lang["common_import_change_file"] = "Αλλαγή";
-$lang["common_import_excel"] = "Εισαγωγή Excel";
-$lang["common_import_full_path"] = "Η πλήρης διαδρομή του αρχείου Excel απαιτείται";
+$lang["common_import_csv"] = "Εισαγωγή CSV";
+$lang["common_import_full_path"] = "Η πλήρης διαδρομή του αρχείου CSV απαιτείται";
 $lang["common_import_remove_file"] = "Αφαίρεση";
 $lang["common_import_select_file"] = "Επιλογή αρχείου";
 $lang["common_inv"] = "αποθ";

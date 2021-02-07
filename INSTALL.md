@@ -1,9 +1,9 @@
 Server Requirements
 -------------------
 
-* PHP version 5.6 to 7.3 are supported. Please note that PHP needs to have `php-gd`, `php-bcmath`, `php-intl`, `php-openssl`, `php-mbstring` and `php-curl` installed and enabled.
+* PHP version 7.2 to 7.4 are supported, PHP version 5.6 and 8.0 are NOT supported. Please note that PHP needs to have `php-gd`, `php-bcmath`, `php-intl`, `php-openssl`, `php-mbstring` and `php-curl` installed and enabled.
 
-* MySQL 5.5, 5.6 and 5.7 are supported, also MariaDB replacement is supported and apparently offering better performance. However you need to disable `only_full_group_by` option, see issue [#2538](https://github.com/opensourcepos/opensourcepos/issues/2538).
+* MySQL 5.5, 5.6 and 5.7 are supported, also MariaDB replacement 10.x is supported and apparently offering better performance.
 
 * Apache 2.2 and 2.4 are supported. Also Nginx has been proven to work fine, see [wiki page here](https://github.com/opensourcepos/opensourcepos/wiki/Local-Deployment-using-LEMP).
 
@@ -98,7 +98,7 @@ Cloud install
 -------------
 
 If you choose *DigitalOcean*:
-[Through this link](https://m.do.co/c/ac38c262507b), you will get a *$50 credit* for a first month. [Check the wiki](https://github.com/opensourcepos/opensourcepos/wiki/DOCS-USERS-Getting-Started-installations#cloud-deploy-installation) for further instructions on how to install the necessary components.
+[Through this link](https://m.do.co/c/ac38c262507b), you will get a *$100 credit* for a first month. [Check the wiki](https://github.com/opensourcepos/opensourcepos/wiki/Getting-Started-installations) for further instructions on how to install the necessary components.
 
 
 cPanel & SSH Install

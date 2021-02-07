@@ -9,6 +9,7 @@ class Receivings extends Secure_Controller
 		parent::__construct('receivings');
 
 		$this->load->library('receiving_lib');
+		$this->load->library('token_lib');
 		$this->load->library('barcode_lib');
 	}
 
@@ -90,7 +91,7 @@ class Receivings extends Secure_Controller
 
 		$mode = $this->receiving_lib->get_mode();
 		$item_id_or_number_or_item_kit_or_receipt = $this->input->post('item');
-		$this->barcode_lib->parse_barcode_fields($quantity, $item_id_or_number_or_item_kit_or_receipt);
+		$this->token_lib->parse_barcode($quantity, $price, $item_id_or_number_or_item_kit_or_receipt);
 		$quantity = ($mode == 'receive' || $mode == 'requisition') ? $quantity : -$quantity;
 		$item_location = $this->receiving_lib->get_stock_source();
 		$discount = $this->config->item('default_receivings_discount');
@@ -123,9 +124,9 @@ class Receivings extends Secure_Controller
 		$description = $this->input->post('description');
 		$serialnumber = $this->input->post('serialnumber');
 		$price = parse_decimals($this->input->post('price'));
-		$quantity = parse_decimals($this->input->post('quantity'));
+		$quantity = parse_quantity($this->input->post('quantity'));
 		$discount = parse_decimals($this->input->post('discount'));
-		$discount_type = parse_decimals($this->input->post('discount_type'));
+		$discount_type = $this->input->post('discount_type');
 		$item_location = $this->input->post('location');
 		$receiving_quantity = $this->input->post('receiving_quantity');
 
@@ -377,15 +378,17 @@ class Receivings extends Secure_Controller
 		$newdate = $this->input->post('date');
 		
 		$date_formatter = date_create_from_format($this->config->item('dateformat') . ' ' . $this->config->item('timeformat'), $newdate);
+		$receiving_time = $date_formatter->format('Y-m-d H:i:s');
 
 		$receiving_data = array(
-			'receiving_time' => $date_formatter->format('Y-m-d H:i:s'),
+			'receiving_time' => $receiving_time,
 			'supplier_id' => $this->input->post('supplier_id') ? $this->input->post('supplier_id') : NULL,
 			'employee_id' => $this->input->post('employee_id'),
 			'comment' => $this->input->post('comment'),
 			'reference' => $this->input->post('reference') != '' ? $this->input->post('reference') : NULL
 		);
-	
+
+		$this->Inventory->update('RECV '.$receiving_id, ['trans_date' => $receiving_time]);
 		if($this->Receiving->update($receiving_data, $receiving_id))
 		{
 			echo json_encode(array('success' => TRUE, 'message' => $this->lang->line('receivings_successfully_updated'), 'id' => $receiving_id));

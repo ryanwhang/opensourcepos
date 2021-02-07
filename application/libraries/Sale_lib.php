@@ -243,6 +243,11 @@ class Sale_lib
 		$this->CI->session->unset_userdata('sales_quote_number');
 	}
 
+	public function clear_work_order_number()
+	{
+		$this->CI->session->unset_userdata('sales_work_order_number');
+	}
+
 	public function clear_sale_type()
 	{
 		$this->CI->session->unset_userdata('sale_type');
@@ -260,9 +265,7 @@ class Sale_lib
 
 	public function is_invoice_mode()
 	{
-		return ($this->CI->session->userdata('sales_invoice_number_enabled') == 'true' ||
-				$this->CI->session->userdata('sales_mode') == 'sale_invoice' ||
-				($this->CI->session->userdata('sales_invoice_number_enabled') == '1') &&
+		return ($this->CI->session->userdata('sales_mode') == 'sale_invoice' &&
 					$this->CI->config->item('invoice_enable') == TRUE);
 	}
 
@@ -284,16 +287,6 @@ class Sale_lib
 	public function is_work_order_mode()
 	{
 		return ($this->CI->session->userdata('sales_mode') == 'sale_work_order');
-	}
-
-	public function set_invoice_number_enabled($invoice_number_enabled)
-	{
-		return $this->CI->session->set_userdata('sales_invoice_number_enabled', $invoice_number_enabled);
-	}
-
-	public function get_invoice_number_enabled()
-	{
-		return $this->CI->session->userdata('sales_invoice_number_enabled');
 	}
 
 	public function set_price_work_orders($price_work_orders)
@@ -472,29 +465,27 @@ class Sale_lib
 			$prediscount_subtotal= bcadd($prediscount_subtotal, $extended_amount);
 			$total = bcadd($total, $extended_discounted_amount);
 
-			if($this->CI->config->item('tax_included'))
-			{
-				$subtotal = bcadd($subtotal, $this->get_extended_total_tax_exclusive($item['item_id'], $extended_discounted_amount, $item['quantity'], $item['price'], $item['discount'],$item['discount_type']));
-			}
-			else
-			{
-				$subtotal = bcadd($subtotal, $extended_discounted_amount);
-			}
+			$subtotal = bcadd($subtotal, $extended_discounted_amount);
 		}
 
 		$totals['prediscount_subtotal'] = $prediscount_subtotal;
 		$totals['total_discount'] = $total_discount;
-		$totals['subtotal'] = $subtotal;
 		$sales_tax = 0;
 
-		foreach($taxes as $tax_excluded)
+		foreach($taxes as $tax)
 		{
-			if($tax_excluded['tax_type'] == Tax_lib::TAX_TYPE_EXCLUDED)
+			if($tax['tax_type'] === Tax_lib::TAX_TYPE_EXCLUDED)
 			{
-				$total = bcadd($total, $tax_excluded['sale_tax_amount']);
-				$sales_tax = bcadd($sales_tax, $tax_excluded['sale_tax_amount']);
+				$total = bcadd($total, $tax['sale_tax_amount']);
+				$sales_tax = bcadd($sales_tax, $tax['sale_tax_amount']);
+			}
+			else
+			{
+				$subtotal = bcsub($subtotal, $tax['sale_tax_amount']);
 			}
 		}
+
+		$totals['subtotal'] = $subtotal;
 		$totals['total'] = $total;
 		$totals['tax_total'] = $sales_tax;
 
@@ -544,7 +535,6 @@ class Sale_lib
 
 		return $totals;
 	}
-
 
 	// Multiple Payments
 	public function get_amount_due()
@@ -601,18 +591,10 @@ class Sale_lib
 
 	public function get_mode()
 	{
-		if(!$this->CI->session->userdata('sales_mode'))
-		{
-			if($this->CI->config->item('invoice_enable') == '1')
-			{
-				$this->set_mode($this->CI->config->item('default_register_mode'));
-			}
-			else
-			{
-				$this->set_mode('sale');
-			}
-		}
-
+		if(!$this->CI->session->userdata('sales_mode'))                                                                                                                                                                                                                     
+		{                                                                                                                                                                                                                                                                   
+			$this->set_mode('sale');                                                                                                                                                                                                                            
+		}      
 		return $this->CI->session->userdata('sales_mode');
 	}
 
@@ -653,7 +635,7 @@ class Sale_lib
 	{
 		if(!$this->CI->session->userdata('sales_location'))
 		{
-			$this->set_sale_location($this->CI->Stock_location->get_default_location_id());
+			$this->set_sale_location($this->CI->Stock_location->get_default_location_id('sales'));
 		}
 
 		return $this->CI->session->userdata('sales_location');
@@ -709,7 +691,7 @@ class Sale_lib
 		$this->CI->session->unset_userdata('sales_rewards_remainder');
 	}
 
-	public function add_item(&$item_id, $quantity = 1, $item_location, $discount = 0.0, $discount_type = 0, $price_mode = PRICE_MODE_STANDARD, $kit_price_option = NULL, $kit_print_option = NULL, $price_override = NULL, $description = NULL, $serialnumber = NULL, $sale_id = NULL, $include_deleted = FALSE, $print_option = NULL, $line = NULL )
+	public function add_item(&$item_id, $quantity = 1, $item_location, $discount = 0.0, $discount_type = 0, $price_mode = PRICE_MODE_STANDARD, $kit_price_option = NULL, $kit_print_option = NULL, $price_override = NULL, $description = NULL, $serialnumber = NULL, $sale_id = NULL, $include_deleted = FALSE, $print_option = NULL, $line = NULL)
 	{
 		$item_info = $this->CI->Item->get_info_by_id_or_number($item_id, $include_deleted);
 		//make sure item exists
@@ -719,7 +701,6 @@ class Sale_lib
 			return FALSE;
 		}
 
-		$price = 0.00;
 		$cost_price = 0.00;
 		$item_id = $item_info->item_id;
 		$item_type = $item_info->item_type;
@@ -747,7 +728,6 @@ class Sale_lib
 				$price = $item_info->unit_price;
 				$cost_price = $item_info->cost_price;
 			}
-
 		}
 
 		if($price_override != NULL)
@@ -835,7 +815,7 @@ class Sale_lib
 
 		$attribute_links = $this->CI->Attribute->get_link_values($item_id, 'sale_id', $sale_id, Attribute::SHOW_IN_SALES)->row_object();
 
-	//Item already exists and is not serialized, add to quantity
+		//Item already exists and is not serialized, add to quantity
 		if(!$itemalreadyinsale || $item_info->is_serialized)
 		{
 			$item = array($insertkey => array(
@@ -887,7 +867,7 @@ class Sale_lib
 		//make sure item exists
 		if($item_id != -1)
 		{
-			$item_info = $this->CI->Item->get_info_by_id_or_number($item_id, TRUE);
+			$item_info = $this->CI->Item->get_info_by_id_or_number($item_id);
 
 			if($item_info->stock_type == HAS_STOCK)
 			{
@@ -911,16 +891,16 @@ class Sale_lib
 	public function get_quantity_already_added($item_id, $item_location)
 	{
 		$items = $this->get_cart();
-		$quanity_already_added = 0;
+		$quantity_already_added = 0;
 		foreach($items as $item)
 		{
 			if($item['item_id'] == $item_id && $item['item_location'] == $item_location)
 			{
-				$quanity_already_added+=$item['quantity'];
+				$quantity_already_added += $item['quantity'];
 			}
 		}
 
-		return $quanity_already_added;
+		return $quantity_already_added;
 	}
 
 	public function get_item_id($line_to_get)
@@ -990,7 +970,7 @@ class Sale_lib
 
 		foreach($this->CI->Sale->get_sale_items_ordered($sale_id)->result() as $row)
 		{
-			$this->add_item($row->item_id, -$row->quantity_purchased, $row->item_location, $row->discount, $row->discount_type, PRICE_MODE_STANDARD, NULL, NULL, $row->item_unit_price, $row->description, $row->serialnumber, TRUE);
+			$this->add_item($row->item_id, -$row->quantity_purchased, $row->item_location, $row->discount, $row->discount_type, PRICE_MODE_STANDARD, NULL, NULL, $row->item_unit_price, $row->description, $row->serialnumber, NULL, TRUE);
 		}
 
 		$this->set_customer($this->CI->Sale->get_customer($sale_id)->person_id);
@@ -1005,7 +985,7 @@ class Sale_lib
 
 		foreach($this->CI->Item_kit_items->get_info($item_kit_id) as $item_kit_item)
 		{
-			$result &= $this->add_item($item_kit_item['item_id'], $item_kit_item['quantity'], $item_location, $discount, $discount_type, PRICE_MODE_KIT, $kit_price_option, $kit_print_option, NULL, NULL, NULL, FALSE);
+			$result &= $this->add_item($item_kit_item['item_id'], $item_kit_item['quantity'], $item_location, $discount, $discount_type, PRICE_MODE_KIT, $kit_price_option, $kit_print_option);
 
 			if($stock_warning == NULL)
 			{
@@ -1049,13 +1029,14 @@ class Sale_lib
 	public function clear_all()
 	{
 		$this->CI->session->set_userdata('sale_id', -1);
-		$this->set_invoice_number_enabled(FALSE);
+		$this->clear_mode();
 		$this->clear_table();
 		$this->empty_cart();
 		$this->clear_comment();
 		$this->clear_email_receipt();
 		$this->clear_invoice_number();
 		$this->clear_quote_number();
+		$this->clear_work_order_number();
 		$this->clear_sale_type();
 		$this->clear_giftcard_remainder();
 		$this->empty_payments();
@@ -1082,7 +1063,9 @@ class Sale_lib
 		}
 		$this->CI->session->set_userdata('cash_mode', $cash_mode);
 
-		if(cash_decimals() < totals_decimals())
+		$cash_rounding_code = $this->CI->config->item('cash_rounding_code');
+
+		if(cash_decimals() < totals_decimals() || $cash_rounding_code == Rounding_mode::HALF_FIVE)
 		{
 			$cash_rounding = 1;
 		}
@@ -1210,27 +1193,27 @@ class Sale_lib
 		$total = bcmul($quantity, $price);
 		if($discount_type == PERCENT)
 		{
-			$discount_fraction = bcdiv($discount, 100);
-			$discount=bcmul($total,$discount_fraction);
+			$discount = bcmul($total, bcdiv($discount, 100));
 		}
-		
+
 		return round($discount, totals_decimals(), PHP_ROUND_HALF_UP);
 	}
 
 	public function get_item_tax($quantity, $price, $discount, $discount_type, $tax_percentage)
 	{
-		$price = $this->get_item_total($quantity, $price, $discount, $discount_type, TRUE);
+		$item_total = $this->get_item_total($quantity, $price, $discount, $discount_type, TRUE);
+
 		if($this->CI->config->item('tax_included'))
 		{
-			$tax_fraction = bcadd(100, $tax_percentage);
-			$tax_fraction = bcdiv($tax_fraction, 100);
-			$price_tax_excl = bcdiv($price, $tax_fraction);
+			$tax_fraction = bcdiv(bcadd(100, $tax_percentage), 100);
+			$price_tax_excl = bcdiv($item_total, $tax_fraction);
 
-			return bcsub($price, $price_tax_excl);
+			return bcsub($item_total, $price_tax_excl);
 		}
+
 		$tax_fraction = bcdiv($tax_percentage, 100);
 
-		return bcmul($price, $tax_fraction);
+		return bcmul($item_total, $tax_fraction);
 	}
 
 	public function calculate_subtotal($include_discount = FALSE, $exclude_tax = FALSE)
@@ -1259,7 +1242,8 @@ class Sale_lib
 
 		if(!$this->CI->config->item('tax_included'))
 		{
-			foreach($this->CI->tax_lib->get_taxes($this->get_cart())[0] as $tax)
+			$cart = $this->get_cart();
+			foreach($this->CI->tax_lib->get_taxes($cart)[0] as $tax)
 			{
 				$total = bcadd($total, $tax['sale_tax_amount']);
 			}
@@ -1282,7 +1266,6 @@ class Sale_lib
 	{
 		$cash_decimals = cash_decimals();
 		$cash_rounding_code = $this->CI->config->item('cash_rounding_code');
-		$rounded_total = $total;
 
 		return Rounding_mode::round_number($cash_rounding_code, $total, $cash_decimals);
 	}

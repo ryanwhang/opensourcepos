@@ -1,4 +1,5 @@
-<?php
+<?php 
+
 $lang["common_address_1"] = "Adres 1";
 $lang["common_address_2"] = "Adres 2";
 $lang["common_city"] = "Plaats";
@@ -6,18 +7,19 @@ $lang["common_close"] = "Sluiten";
 $lang["common_comments"] = "Opmerkingen";
 $lang["common_common"] = "";
 $lang["common_confirm_search"] = "";
+$lang["common_copyrights"] = "© 2010 - %1";
 $lang["common_correct_errors"] = "";
 $lang["common_country"] = "Land";
 $lang["common_date"] = "Datum";
 $lang["common_delete"] = "Verwijder";
 $lang["common_det"] = "details";
-$lang["common_download_import_template"] = "Download Import Excel Template (CSV)";
+$lang["common_download_import_template"] = "Download Import CSV Template (CSV)";
 $lang["common_edit"] = "Wijzig";
 $lang["common_email"] = "E-mail";
 $lang["common_email_invalid_format"] = "";
-$lang["common_export_excel"] = "Excel Export";
-$lang["common_export_excel_no"] = "Nee";
-$lang["common_export_excel_yes"] = "Ja";
+$lang["common_export_csv"] = "CSV Export";
+$lang["common_export_csv_no"] = "Nee";
+$lang["common_export_csv_yes"] = "Ja";
 $lang["common_fields_required_message"] = "";
 $lang["common_first_name"] = "Voornaam";
 $lang["common_first_name_required"] = "";
@@ -28,7 +30,7 @@ $lang["common_gender_male"] = "M";
 $lang["common_id"] = "Id";
 $lang["common_import"] = "Import";
 $lang["common_import_change_file"] = "";
-$lang["common_import_excel"] = "";
+$lang["common_import_csv"] = "";
 $lang["common_import_full_path"] = "";
 $lang["common_import_remove_file"] = "Verwijder";
 $lang["common_import_select_file"] = "";

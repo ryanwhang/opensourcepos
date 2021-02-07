@@ -1,31 +1,4 @@
 <?php if (!defined('BASEPATH')) exit('No direct script access allowed');
-
-define('HAS_STOCK', 0);
-define('HAS_NO_STOCK', 1);
-
-define('ITEM', 0);
-define('ITEM_KIT', 1);
-define('ITEM_AMOUNT_ENTRY', 2);
-define('ITEM_TEMP', 3);
-
-define('PRINT_ALL', 0);
-define('PRINT_PRICED', 1);
-define('PRINT_KIT', 2);
-
-define('PRINT_YES', 0);
-define('PRINT_NO', 1);
-
-define('PRICE_ALL', 0);
-define('PRICE_KIT', 1);
-define('PRICE_KIT_ITEMS', 2);
-
-define('PRICE_OPTION_ALL', 0);
-define('PRICE_OPTION_KIT', 1);
-define('PRICE_OPTION_KIT_STOCK', 2);
-
-define('NAME_SEPARATOR', ' | ');
-
-
 /**
  * Item class
  */
@@ -60,7 +33,7 @@ class Item extends CI_Model
 	public function item_number_exists($item_number, $item_id = '')
 	{
 		if($this->config->item('allow_duplicate_barcodes') != FALSE)
-		{			
+		{
 			return FALSE;
 		}
 
@@ -115,7 +88,7 @@ class Item extends CI_Model
 		}
 		else
 		{
-			$this->db->select('items.item_id AS item_id');
+			$this->db->select('MAX(items.item_id) AS item_id');
 			$this->db->select('MAX(items.name) AS name');
 			$this->db->select('MAX(items.category) AS category');
 			$this->db->select('MAX(items.supplier_id) AS supplier_id');
@@ -177,24 +150,28 @@ class Item extends CI_Model
 
 		if(!empty($search))
 		{
-			$this->db->group_start();
-				$this->db->like('name', $search);
-				$this->db->or_like('item_number', $search);
-				$this->db->or_like('items.item_id', $search);
-				$this->db->or_like('company_name', $search);
-				$this->db->or_like('items.category', $search);
-				if ($filters['search_custom'] && $attributes_enabled)
-				{
-					$this->db->or_like('attribute_value', $search);
-					$this->db->or_like('attribute_date', $search);
-					$this->db->or_like('attribute_decimal', $search);
-				}
-			$this->db->group_end();
+			if ($attributes_enabled && $filters['search_custom'])
+			{
+				$this->db->having("attribute_values LIKE '%$search%'");
+				$this->db->or_having("attribute_dtvalues LIKE '%$search%'");
+				$this->db->or_having("attribute_dvalues LIKE '%$search%'");
+			}
+			else
+			{
+				$this->db->group_start();
+					$this->db->like('name', $search);
+					$this->db->or_like('item_number', $search);
+					$this->db->or_like('items.item_id', $search);
+					$this->db->or_like('company_name', $search);
+					$this->db->or_like('items.category', $search);
+				$this->db->group_end();
+			}
 		}
 
 		if($attributes_enabled)
 		{
 			$format = $this->db->escape(dateformat_mysql());
+			$this->db->simple_query('SET SESSION group_concat_max_len=49152');
 			$this->db->select('GROUP_CONCAT(DISTINCT CONCAT_WS(\'_\', definition_id, attribute_value) ORDER BY definition_id SEPARATOR \'|\') AS attribute_values');
 			$this->db->select("GROUP_CONCAT(DISTINCT CONCAT_WS('_', definition_id, DATE_FORMAT(attribute_date, $format)) SEPARATOR '|') AS attribute_dtvalues");
 			$this->db->select('GROUP_CONCAT(DISTINCT CONCAT_WS(\'_\', definition_id, attribute_decimal) SEPARATOR \'|\') AS attribute_dvalues');
@@ -256,7 +233,6 @@ class Item extends CI_Model
 	public function get_all($stock_location_id = -1, $rows = 0, $limit_from = 0)
 	{
 		$this->db->from('items');
-		$this->db->join('suppliers', 'suppliers.person_id = items.supplier_id', 'left');
 
 		if($stock_location_id > -1)
 		{
@@ -286,12 +262,11 @@ class Item extends CI_Model
 		$this->db->select('GROUP_CONCAT(attribute_value SEPARATOR \'|\') AS attribute_values');
 		$this->db->select('GROUP_CONCAT(attribute_decimal SEPARATOR \'|\') AS attribute_dvalues');
 		$this->db->select('GROUP_CONCAT(attribute_date SEPARATOR \'|\') AS attribute_dtvalues');
-		$this->db->select('suppliers.company_name');
 		$this->db->from('items');
-		$this->db->join('suppliers', 'suppliers.person_id = items.supplier_id', 'left');
 		$this->db->join('attribute_links', 'attribute_links.item_id = items.item_id', 'left');
 		$this->db->join('attribute_values', 'attribute_links.attribute_id = attribute_values.attribute_id', 'left');
 		$this->db->where('items.item_id', $item_id);
+		$this->db->group_by('items.item_id');
 
 		$query = $this->db->get();
 
@@ -383,11 +358,11 @@ class Item extends CI_Model
 	{
 		$format = $this->db->escape(dateformat_mysql());
 		$this->db->select('items.*');
-		$this->db->select('company_name');
+		$this->db->select('MAX(company_name) AS company_name');
 		$this->db->select('GROUP_CONCAT(DISTINCT CONCAT_WS(\'_\', definition_id, attribute_value) ORDER BY definition_id SEPARATOR \'|\') AS attribute_values');
 		$this->db->select("GROUP_CONCAT(DISTINCT CONCAT_WS('_', definition_id, DATE_FORMAT(attribute_date, $format)) ORDER BY definition_id SEPARATOR '|') AS attribute_dtvalues");
 		$this->db->select('GROUP_CONCAT(DISTINCT CONCAT_WS(\'_\', definition_id, attribute_decimal) ORDER BY definition_id SEPARATOR \'|\') AS attribute_dvalues');
-		$this->db->select('quantity');
+		$this->db->select('MAX(quantity) as quantity');
 		$this->db->from('items');
 		$this->db->join('suppliers', 'suppliers.person_id = items.supplier_id', 'left');
 		$this->db->join('item_quantities', 'item_quantities.item_id = items.item_id', 'left');
@@ -499,7 +474,7 @@ class Item extends CI_Model
 		{
 			$seed .= ',' . $this->config->item('suggestions_second_column');
 		}
-			
+
 		if($this->config->item('suggestions_third_column') !== '')
 		{
 			$seed .= ',' . $this->config->item('suggestions_third_column');
@@ -507,7 +482,7 @@ class Item extends CI_Model
 
 		return $seed;
 	}
-	
+
 	function get_search_suggestion_label($result_row)
 	{
 		$label = '';
@@ -568,7 +543,7 @@ class Item extends CI_Model
 			}
 		}
 	}
-	
+
 	public function get_search_suggestions($search, $filters = array('is_deleted' => FALSE, 'search_custom' => FALSE), $unique = FALSE, $limit = 25)
 	{
 		$suggestions = array();
@@ -844,7 +819,7 @@ class Item extends CI_Model
 			if($filters['search_custom'] != FALSE)
 			{
 				// This section is currently never used but custom fields are replaced with attributes
-				// therefore in case this feature is required a proper query needs to written here
+				// therefore in case this feature is required a proper query needs to be written here
 				/*
 				$this->db->from('items');
 				$this->db->group_start();

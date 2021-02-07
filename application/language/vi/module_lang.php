@@ -1,7 +1,7 @@
 <?php 
 
-$lang["module_attributes"] = "";
-$lang["module_attributes_desc"] = "";
+$lang["module_attributes"] = "Thuộc tính";
+$lang["module_attributes_desc"] = "Thêm, Cập nhật, Xóa và Tìm kiếm các thuộc tính.";
 $lang["module_both"] = "Cả hai";
 $lang["module_cashups"] = "";
 $lang["module_cashups_desc"] = "";
